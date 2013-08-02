@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"github.com/tarm/goserial"
 	"log"
 	"strconv"
@@ -16,12 +15,11 @@ func ReadSerial(data chan int) {
 	buf := make([]byte, 128)
 	running := true
 	for running {
-
 		in := make([]byte, 1)
 		n, err := s.Read(in)
 		if err == nil && n == 1 {
 			if string(in) == "\n" {
-				str := string(bytes.Trim(buf, "\x00"))
+				str := strip(buf)
 				if len(str) > 0 {
 					y, _ := strconv.ParseInt(str, 10, 64)
 					data <- int(y)
@@ -32,4 +30,14 @@ func ReadSerial(data chan int) {
 			}
 		}
 	}
+}
+
+func strip(bytes []byte) string {
+	out := make([]byte, 0)
+	for _, b := range bytes {
+		if b >= 48 && b <= 57 { // only numbers
+			out = append(out, b)
+		}
+	}
+	return string(out)
 }
