@@ -43,7 +43,6 @@ func (c Clock) loop() {
 	for {
 		select {
 		case <-c.ticker.C:
-			println("ticker")
 			c.Tick <- true
 		case <-c.quit:
 			println("clock quit")

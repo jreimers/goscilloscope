@@ -3,6 +3,7 @@ package main
 type Channel struct {
 	Buffer chan int64
 	Name   string
+	color  []float32
 }
 
 func NewChannel(name string) *Channel {
@@ -12,6 +13,10 @@ func NewChannel(name string) *Channel {
 	return c
 }
 
+func (c *Channel) SetColor(r, g, b float32) {
+	c.color = []float32{r, g, b, 0.0}
+}
+
 func (c *Channel) GetColor() []float32 {
-	return []float32{0.0, 0.9, 0.0, 0.0}
+	return c.color
 }

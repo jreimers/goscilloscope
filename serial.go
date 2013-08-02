@@ -5,6 +5,7 @@ import (
 	"github.com/tarm/goserial"
 	"io"
 	"log"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -26,54 +27,45 @@ func NewSerialReader(device string, quit chan struct{}) *SerialReader {
 func (r *SerialReader) AddChannel(c *Channel) {
 	r.Channels = append(r.Channels, c)
 }
+
 func (r *SerialReader) BeginRead() {
-	//go func() {
-	//defer r.endRead()
-	//r.setupSerial()
-	//fmt.Println("Connecting to device:", r.Device)
-	c := &serial.Config{Name: r.Device, Baud: 9600}
-	reader, err := serial.OpenPort(c)
-	if err != nil {
-		log.Fatalf("Error opening serial port: %s", err)
-	}
-	buf := make([]byte, 128)
-	for {
-		in := make([]byte, 1)
-		n, err := reader.Read(in)
-		if err != nil {
-			fmt.Printf("%d: %s\n", n, err)
-		}
-		if err == nil && n == 1 {
-			if string(in) == "\n" {
-				str := strip(buf)
-				if len(str) > 0 {
-					values := strings.Split(str, ":")
-					if len(values) != len(r.Channels) {
-						buf = make([]byte, 128)
-						continue
-					}
-					for i, c := range r.Channels {
-						y, _ := strconv.ParseInt(values[i], 10, 64)
-						// overwrite the last value in the channel
-						if len(c.Buffer) > 0 {
-							<-c.Buffer
+	go func() {
+		defer r.endRead()
+		r.setupSerial()
+		buf := make([]byte, 128)
+		for {
+			in := make([]byte, 1)
+			n, err := r.reader.Read(in)
+			if err == nil && n == 1 {
+				if string(in) == "\n" {
+					str := strip(buf)
+					if len(str) > 0 {
+						values := strings.Split(str, ":")
+						if len(values) == len(r.Channels) {
+							for i, c := range r.Channels {
+								y, _ := strconv.ParseInt(values[i], 10, 64)
+								// overwrite the last value in the channel
+								if len(c.Buffer) > 0 {
+									<-c.Buffer
+								}
+								c.Buffer <- y
+							}
 						}
-						c.Buffer <- y
 					}
+					buf = make([]byte, 128)
+				} else {
+					buf = append(buf, in[0])
 				}
-				buf = make([]byte, 128)
-			} else {
-				buf = append(buf, in[0])
+			}
+			select {
+			case <-r.quit:
+				return
+			default:
+				runtime.Gosched()
+				continue
 			}
 		}
-		select {
-		case <-r.quit:
-			return
-		default:
-			continue
-		}
-	}
-	//}()
+	}()
 }
 func (r *SerialReader) setupSerial() {
 	fmt.Println("Connecting to device:", r.Device)

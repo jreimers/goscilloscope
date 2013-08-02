@@ -48,10 +48,9 @@ func (rw *RenderWindow) Render() {
 		close(rw.quit)
 	}
 	for i, c := range rw.Channels {
-		println(c.Name)
 		select {
 		case val := <-c.Buffer:
-			if len(rw.renderBuffers[i]) > 1440 {
+			if int64(len(rw.renderBuffers[i])) > rw.Width {
 				rw.renderBuffers[i] = rw.renderBuffers[i][1:]
 			}
 			rw.renderBuffers[i] = append(rw.renderBuffers[i], val)
@@ -79,7 +78,6 @@ func (rw *RenderWindow) draw() {
 		lastY := int64(0)
 		for i := 0; i < len(rw.renderBuffers[chanIdx]); i += 1 {
 			y := rw.Height - (rw.renderBuffers[chanIdx][i] * rw.Height / 1024)
-			println(y)
 			gl.Vertex2i(i-1, int(lastY))
 			gl.Vertex2i(i, int(y))
 			lastY = y
