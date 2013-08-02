@@ -3,6 +3,9 @@ goscilloscope
 
 Simple app that plots values coming over a serial connection, which can conveniently be combined with an arduino to make a very basic oscilloscope!
 
+Multiple Channels
+![multiple channels](http://i.imgur.com/WW3zYvE.png)
+
 Variable Rectified Power Supply
 ![power supply](http://i.imgur.com/AHlrunl.png)
 
